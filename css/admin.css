@@ -1,37 +1,95 @@
-/* Professor settings page. Builds on styles.css. */
+/* Admin settings page. Builds on styles.css.
+   Always light, with NDSU green (#0A5640) and yellow (#FFC72C), so it stays readable
+   even when the device is in dark mode. */
+body.admin {
+  --bg: #f3f5f3; --surface: #ffffff; --ink: #1c2420; --muted: #4f5d56; --line: #cfd8d3;
+  --green: #0a5640; --green-soft: #e1eee8; --gold: #ffc72c; --gold-soft: #fff3cc; --gold-ink: #5c4300;
+  --low: #a2432f; --low-soft: #f7e6e1; --focus: #1b7fd1;
+  --ndsu-green: #0a5640; --ndsu-yellow: #ffc72c;
+  color-scheme: light;
+  background: var(--bg); color: var(--ink);
+  accent-color: var(--ndsu-green);
+}
 .admin-wrap { max-width: 1180px; }
-.admin-wrap .card { border: 1px solid var(--line, #d9dde3); border-radius: 10px; padding: 20px; background: var(--paper, #fff); }
+.admin-wrap .masthead { border-bottom: 3px solid var(--ndsu-yellow); }
+.admin-wrap .org { color: var(--ndsu-green); }
+.admin-wrap .mode-tag { background: var(--ndsu-green); color: #fff; padding: 3px 10px; font-weight: 600; }
+
+/* cards */
+.admin-wrap .card { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-top: 4px solid var(--ndsu-green);
+  border-radius: 10px; padding: 22px; box-shadow: 0 1px 3px rgba(10, 86, 64, .08); }
+.admin-wrap .card h2, .admin-wrap .card h3 { color: var(--ndsu-green); }
+.admin-wrap .card p, .admin-wrap .card label, .admin-wrap .card li { color: var(--ink); }
+.admin-wrap .card .muted, .admin-wrap .hint { color: var(--muted); }
+.hint { font-size: 13px; margin-top: 4px; }
+
+/* sticky top bar */
 .admin-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 5;
-  background: var(--bg, #fff); padding: 10px 0; border-bottom: 1px solid var(--line, #d9dde3); }
-.admin-bar .state { font-size: 14px; }
-.admin-bar .state.dirty { color: #8a5a00; font-weight: 600; }
-.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
-.settings-grid .field select, .settings-grid .field input { width: 100%; }
-.hint { font-size: 13px; color: var(--muted, #5b6573); margin-top: 4px; }
-.table-scroll { overflow-x: auto; border: 1px solid var(--line, #d9dde3); border-radius: 8px; }
-table.careers { border-collapse: collapse; width: 100%; font-size: 14px; }
-table.careers th, table.careers td { padding: 4px 6px; border-bottom: 1px solid var(--line, #e6e9ee); text-align: left; vertical-align: middle; }
-table.careers thead th { position: sticky; top: 0; background: var(--paper, #fff); font-size: 12px; line-height: 1.2; }
+  background: var(--ndsu-green); color: #fff; padding: 12px 16px; border-radius: 10px; border-bottom: 3px solid var(--ndsu-yellow); }
+.admin-bar strong { color: #fff; font-size: 17px; }
+.admin-bar .state { font-size: 14px; color: #dcebe4; margin-left: 6px; }
+.admin-bar .state.dirty { color: var(--ndsu-yellow); font-weight: 700; }
+.admin-bar .btn { background: var(--ndsu-yellow); color: #1c2420; border: 2px solid var(--ndsu-yellow); }
+.admin-bar .btn.secondary { background: transparent; color: #fff; border-color: #fff; }
+.admin-bar .btn.link { background: none; border: none; color: #fff; }
+.admin-bar .btn:disabled { opacity: .45; }
+
+/* buttons elsewhere */
+.admin-wrap .btn { background: var(--ndsu-green); color: #fff; border: 2px solid var(--ndsu-green); }
+.admin-wrap .btn.secondary { background: #fff; color: var(--ndsu-green); border-color: var(--ndsu-green); }
+.admin-wrap .btn.link { background: none; border: none; color: var(--ndsu-green); }
+.admin-wrap .btn:hover { filter: none; background-color: #0d6f53; color: #fff; }
+.admin-wrap .btn.secondary:hover { background: var(--green-soft); color: var(--ndsu-green); }
+.admin-wrap .btn.link:hover { background: none; color: #0d6f53; }
+.admin-bar .btn:hover { background: #ffd35c; color: #1c2420; }
+.admin-bar .btn.secondary:hover { background: rgba(255, 255, 255, .15); color: #fff; }
+.admin-bar .btn.link:hover { background: none; color: #fff; }
+
+/* form controls */
+.admin-wrap input, .admin-wrap select, .admin-wrap textarea { background: #fff; color: var(--ink); border: 1px solid #9fb0a8; border-radius: 6px; }
+.admin-wrap input:focus, .admin-wrap select:focus, .admin-wrap textarea:focus { border-color: var(--ndsu-green); outline: 3px solid rgba(255, 199, 44, .7); outline-offset: 0; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+.settings-grid .field select, .settings-grid .field input { width: 100%; padding: 9px 10px; }
+.settings-grid .field label { color: var(--ndsu-green); }
+
+/* career table */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+table.careers { border-collapse: collapse; width: 100%; font-size: 14px; color: var(--ink); }
+table.careers th, table.careers td { padding: 5px 6px; border-bottom: 1px solid #e3e9e5; text-align: left; vertical-align: middle; }
+table.careers tbody tr:nth-child(even) td { background: #f7faf8; }
+table.careers thead th { position: sticky; top: 0; background: var(--ndsu-green); color: #fff; font-size: 12px; line-height: 1.25; }
 table.careers th.num, table.careers td.num { text-align: center; width: 62px; }
 table.careers input[type=text] { width: 100%; min-width: 150px; padding: 6px 8px; }
 table.careers input[type=number] { width: 58px; padding: 6px 4px; text-align: center; font-family: "IBM Plex Mono", monospace; }
 table.careers select { padding: 6px; min-width: 112px; }
-table.careers input.changed, table.careers select.changed { background: #fff6d6; border-color: #d9a400; }
+table.careers input.changed, table.careers select.changed, .settings-grid .changed { background: var(--gold-soft); border-color: #d9a400; }
 table.careers input.invalid { background: #fde8e8; border-color: #c0392b; }
-table.careers tr.new td { background: #eef8ee; }
+table.careers tr.new td { background: #e6f4ea; }
 table.careers tr.removed td { opacity: .45; text-decoration: line-through; }
 .details-row td { padding: 0 6px 10px; }
 .details-row .more { display: grid; grid-template-columns: 220px 1fr; gap: 8px; }
 .details-row input, .details-row textarea { width: 100%; padding: 6px 8px; font: inherit; }
 .row-actions button { font-size: 12px; padding: 4px 8px; }
-.try-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 18px; }
+
+/* try it out */
+.try-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 18px; }
 .try-grid label { display: grid; grid-template-columns: 1fr auto; font-size: 13px; gap: 2px 8px; }
-.try-grid input[type=range] { grid-column: 1 / -1; width: 100%; }
-.try-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.try-grid label b { color: var(--ndsu-green); font-family: "IBM Plex Mono", monospace; }
+.try-grid input[type=range] { grid-column: 1 / -1; width: 100%; border: 0; padding: 0; background: none; }
+.try-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+.admin-wrap .shortlist { border-top: 2px solid var(--ndsu-yellow); }
+.admin-wrap .shortlist li { border-bottom: 1px solid #e3e9e5; color: var(--ink); }
+.admin-wrap .shortlist .dev { color: var(--ndsu-green); font-weight: 600; }
+
+/* messages */
 .msg { padding: 10px 14px; border-radius: 8px; font-size: 14px; }
-.msg.bad { background: #fde8e8; color: #8a1f11; }
-.msg.ok { background: #e6f4ea; color: #1e5a2e; }
+.msg.bad { background: #fde8e8; color: #8a1f11; border: 1px solid #e8b4ab; }
+.msg.ok { background: #e6f4ea; color: #1e5a2e; border: 1px solid #b7dcc1; }
 .msg ul { margin: 6px 0 0 18px; }
-.login { max-width: 380px; margin: 8vh auto; }
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.login { max-width: 400px; margin: 8vh auto; }
+.admin-wrap .login .eyebrow { color: var(--ndsu-green); }
+.admin-wrap > .stack-lg > p.muted, .admin-wrap .stack-lg > p.muted.small { color: var(--muted); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.admin-wrap code { background: var(--green-soft); color: var(--ndsu-green); padding: 1px 5px; border-radius: 4px; }
 @media (max-width: 640px) { .details-row .more { grid-template-columns: 1fr; } }

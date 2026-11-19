@@ -30,8 +30,8 @@ Student's browser (GitHub Pages)                    Google (Apps Script + Sheet)
 | `js/scoring.js` | Scoring engine. Reproduces the workbook formulas | Rarely |
 | `js/app.js` | Survey screens and results page | For layout/feature changes |
 | `css/styles.css` | Look and feel | For design changes |
-| `admin.html`, `js/admin.js` | **Professor settings page**: change the scoring criteria without touching code | The professor, in the browser |
-| `apps-script/Code.gs` | Backend: saves responses, sends emailed copies, stores + protects the professor's settings | Once at setup |
+| `admin.html`, `js/admin.js` | **Admin settings page**: change the scoring criteria without touching code | An admin, in the browser |
+| `apps-script/Code.gs` | Backend: saves responses, sends emailed copies, stores + protects the admin settings | Once at setup |
 | `tests/verify-scoring.js` | Checks the site's math against the Excel workbook | Run after model changes |
 
 ---
@@ -100,12 +100,12 @@ and a count of emailed copies. **Email addresses are not saved.**
 
 ---
 
-## Professor settings page (`admin.html`)
+## Admin settings page (`admin.html`)
 
-A private page where the professor changes how results are scored. It lives at `https://<username>.github.io/<repo-name>/admin.html`.
+A private page where an admin changes how results are scored. It lives at `https://<username>.github.io/<repo-name>/admin.html`.
 It isn't linked from the survey and is set to `noindex`, and **saving requires a password** that is checked by the Google backend.
 
-**What the professor can change**
+**What an admin can change**
 - Each career's ideal 1–5 rating for every skill (half points allowed), plus name, group, category and description
 - Add or remove careers
 - Deviation method (absolute = Excel model, or shortfall), how many top/bottom matches and top skills are shown, and the top-skills tie-break rule
@@ -118,7 +118,7 @@ becomes e.g. `2026.1-r3`, so responses scored under different settings go to dif
 Skills and survey questions are **not** editable here, since changing them changes every career's profile too. That still happens in `config.js`.
 
 **One-time setup (after pasting the new `Code.gs`)**
-1. Apps Script → **Project Settings** (gear) → **Script properties** → **Add script property**: name `ADMIN_PASSWORD`, value = a strong password for the professor. The password lives only there, never in the code or the site.
+1. Apps Script → **Project Settings** (gear) → **Script properties** → **Add script property**: name `ADMIN_PASSWORD`, value = a strong password for the admin. The password lives only there, never in the code or the site.
 2. **Deploy → Manage deployments → Edit → Version: New version → Deploy.** The web app URL stays the same.
 3. Open `admin.html`, sign in, make a small change, and save. Then reload the survey: the footer should show the new model version.
 

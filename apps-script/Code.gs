@@ -30,7 +30,7 @@ var SETTINGS = {
 };
 
 function doGet(e) {
-  // Public: the survey page reads the professor's current scoring settings from here.
+  // Public: the survey page reads the current scoring settings from here.
   if (e && e.parameter && e.parameter.action === "config") return json_({ ok: true, overrides: getOverrides_() });
   return json_({ ok: true, service: "banking-career-assessment", time: new Date().toISOString() });
 }
@@ -112,7 +112,7 @@ function findRow_(sheet, headers, submissionId) {
   return hit ? hit.getRow() : 0;
 }
 
-// --------------------------------------------------------------------------- admin (professor only)
+// --------------------------------------------------------------------------- admin (password protected)
 // The scoring settings are saved in Script Properties (key SCORING_OVERRIDES). Reading them is public
 // (students' browsers need them); changing them needs the admin password, set ONCE by hand in
 // Project Settings > Script properties > ADMIN_PASSWORD. The password is never in the code or the site.

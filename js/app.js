@@ -10,7 +10,7 @@
   var S = window.SurveyScoring;
   var app = document.getElementById("app");
 
-  // The professor's saved scoring settings (admin.html) are loaded from the backend first.
+  // The admin's saved scoring settings (admin.html) are loaded from the backend first.
   // If that fails or times out, the survey runs on the defaults in config.js.
   if (CFG.backendUrl && !window.PREVIEW_BUILD) {
     app.innerHTML = '<p class="muted" style="padding:40px 0">Loading...</p>';
