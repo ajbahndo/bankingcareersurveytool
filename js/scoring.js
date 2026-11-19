@@ -125,7 +125,71 @@
     return errors;
   }
 
+  var DEVIATION_METHODS = ["absolute", "shortfall"];
+  var TIE_BREAKS = ["surveyOrder", "topCareerRelevance"];
+
+  /**
+   * Check a set of professor-edited settings ("overrides") against the base config.
+   * Shape: { revision, scoring: {deviationMethod, topMatches, bottomMatches, topSkills, skillTieBreak},
+   *          careers: [{name, group, category, description, profile:[...]}] }   (scoring/careers optional)
+   */
+  function validateOverrides(config, o) {
+    var errors = [];
+    function intIn(v, lo, hi) { return typeof v === "number" && v % 1 === 0 && v >= lo && v <= hi; }
+    if (!o || typeof o !== "object") return ["Settings are missing"];
+    var sc = o.scoring;
+    if (sc) {
+      if (sc.deviationMethod !== undefined && DEVIATION_METHODS.indexOf(sc.deviationMethod) === -1) errors.push("Unknown scoring method");
+      if (sc.skillTieBreak !== undefined && TIE_BREAKS.indexOf(sc.skillTieBreak) === -1) errors.push("Unknown skill tie-break rule");
+      var nCareers = o.careers ? o.careers.length : config.careers.length;
+      if (sc.topMatches !== undefined && !intIn(sc.topMatches, 1, nCareers)) errors.push("Top matches must be a whole number from 1 to " + nCareers);
+      if (sc.bottomMatches !== undefined && !intIn(sc.bottomMatches, 1, nCareers)) errors.push("Bottom matches must be a whole number from 1 to " + nCareers);
+      if (sc.topSkills !== undefined && !intIn(sc.topSkills, 1, config.skills.length)) errors.push("Top skills must be a whole number from 1 to " + config.skills.length);
+    }
+    if (o.careers) {
+      if (!Array.isArray(o.careers) || !o.careers.length) errors.push("At least one career is required");
+      else {
+        var names = {};
+        o.careers.forEach(function (c, i) {
+          var label = "Career " + (i + 1) + (c && c.name ? " (" + c.name + ")" : "");
+          if (!c || typeof c.name !== "string" || !c.name.trim()) { errors.push(label + " needs a name"); return; }
+          if (names[c.name.trim().toLowerCase()]) errors.push("Duplicate career name: " + c.name);
+          names[c.name.trim().toLowerCase()] = true;
+          if (config.careerGroups && config.careerGroups.indexOf(c.group) === -1) errors.push(label + " has an unknown group");
+          if (!Array.isArray(c.profile) || c.profile.length !== config.skills.length) errors.push(label + " needs " + config.skills.length + " ratings");
+          else c.profile.forEach(function (v, k) {
+            if (typeof v !== "number" || !isFinite(v) || v < 1 || v > 5) errors.push(label + ": " + config.skills[k].name + " must be a number from 1 to 5");
+          });
+        });
+      }
+    }
+    return errors;
+  }
+
+  /**
+   * Apply the professor's saved settings on top of config.js (mutates config).
+   * Returns { applied, errors }. Invalid settings are ignored so the survey keeps working.
+   * The model version gets a "-rN" suffix so responses scored under different settings land on different sheet tabs.
+   */
+  function applyOverrides(config, o) {
+    if (!o) return { applied: false, errors: [] };
+    var errors = validateOverrides(config, o);
+    if (errors.length) return { applied: false, errors: errors };
+    config.baseVersion = config.baseVersion || config.version;
+    if (o.scoring) ["deviationMethod", "topMatches", "bottomMatches", "topSkills", "skillTieBreak"].forEach(function (k) {
+      if (o.scoring[k] !== undefined) config.scoring[k] = o.scoring[k];
+    });
+    if (o.careers) config.careers = o.careers.map(function (c) {
+      return { name: c.name.trim(), group: c.group, category: c.category ? String(c.category).trim() || null : null,
+        description: c.description ? String(c.description).trim() : "", profile: c.profile.slice() };
+    });
+    if (o.revision) config.version = config.baseVersion + "-r" + o.revision;
+    return { applied: true, errors: [] };
+  }
+
   var api = {
+    validateOverrides: validateOverrides,
+    applyOverrides: applyOverrides,
     computeSkillScores: computeSkillScores,
     computeCareerMatches: computeCareerMatches,
     computeTopSkills: computeTopSkills,

@@ -84,5 +84,39 @@ students.forEach(function (s) {
 
 });
 
+// ---- professor's admin settings
+console.log("\nAdmin settings (overrides)");
+(function () {
+  var clone = function () { return JSON.parse(JSON.stringify(config)); };
+  var avery = toAnswers(students[0].answers);
+  var base = scoring.scoreSurvey(config, avery);
+
+  var c1 = clone();
+  var res = scoring.applyOverrides(c1, { revision: 3 });
+  check("revision only: model unchanged, version suffixed", res.applied && c1.version === config.version + "-r3" &&
+    JSON.stringify(scoring.scoreSurvey(c1, avery).topMatches.map(function (m) { return m.name; })) === JSON.stringify(students[0].top5));
+
+  var c2 = clone();
+  var edited = c2.careers.map(function (c) { return { name: c.name, group: c.group, category: null, description: "", profile: c.profile.slice() }; });
+  edited[3].profile = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; // Cash Management changed
+  res = scoring.applyOverrides(c2, { revision: 1, careers: edited, scoring: { topMatches: 3 } });
+  var r2 = scoring.scoreSurvey(c2, avery);
+  check("edited career profile changes scores", res.applied && r2.matches.filter(function (m) { return m.name === "Cash Management"; })[0].gross !==
+    base.matches.filter(function (m) { return m.name === "Cash Management"; })[0].gross);
+  check("topMatches setting applies", r2.topMatches.length === 3);
+
+  var c3 = clone();
+  res = scoring.applyOverrides(c3, { revision: 1, scoring: { deviationMethod: "bogus" } });
+  check("invalid method rejected, config untouched", !res.applied && c3.scoring.deviationMethod === "absolute" && c3.version === config.version);
+
+  var bad = edited.map(function (c) { return Object.assign({}, c); });
+  bad[0].profile = [1, 2, 3];
+  bad[1].profile = [9, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+  bad[2].name = bad[3].name;
+  var errs = scoring.validateOverrides(config, { careers: bad });
+  check("bad length, out-of-range rating and duplicate name all caught", errs.length === 3, errs.join("; "));
+  check("topSkills above skill count rejected", scoring.validateOverrides(config, { scoring: { topSkills: 11 } }).length === 1);
+})();
+
 console.log("\n" + (failures ? failures + " check(s) FAILED" : "All checks passed") + "\n");
 process.exit(failures ? 1 : 0);

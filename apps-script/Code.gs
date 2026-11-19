@@ -29,7 +29,9 @@ var SETTINGS = {
   emailSubject: "Your Banking Career Assessment results"
 };
 
-function doGet() {
+function doGet(e) {
+  // Public: the survey page reads the professor's current scoring settings from here.
+  if (e && e.parameter && e.parameter.action === "config") return json_({ ok: true, overrides: getOverrides_() });
   return json_({ ok: true, service: "banking-career-assessment", time: new Date().toISOString() });
 }
 
@@ -38,6 +40,7 @@ function doPost(e) {
     var body = JSON.parse(e.postData.contents);
     if (body.action === "save") return json_(saveResponse_(body));
     if (body.action === "email") return json_(emailResults_(body));
+    if (/^admin/.test(String(body.action))) return json_(adminAction_(body));
     return json_({ ok: false, error: "Unknown action" });
   } catch (err) {
     console.error(err);
@@ -107,6 +110,114 @@ function findRow_(sheet, headers, submissionId) {
   if (!col || sheet.getLastRow() < 2) return 0;
   var hit = sheet.getRange(2, col, sheet.getLastRow() - 1, 1).createTextFinder(submissionId).matchEntireCell(true).findNext();
   return hit ? hit.getRow() : 0;
+}
+
+// --------------------------------------------------------------------------- admin (professor only)
+// The scoring settings are saved in Script Properties (key SCORING_OVERRIDES). Reading them is public
+// (students' browsers need them); changing them needs the admin password, set ONCE by hand in
+// Project Settings > Script properties > ADMIN_PASSWORD. The password is never in the code or the site.
+var ADMIN = {
+  passwordKey: "ADMIN_PASSWORD",
+  overridesKey: "SCORING_OVERRIDES",
+  sessionSeconds: 6 * 3600,   // 6 hours is the longest CacheService allows
+  maxFailures: 5,             // wrong passwords before a lockout
+  lockoutSeconds: 15 * 60,
+  maxCareers: 80,
+  careerGroups: ["Front-Line", "Back-Office"]
+};
+
+function adminAction_(b) {
+  var props = PropertiesService.getScriptProperties();
+  var cache = CacheService.getScriptCache();
+
+  if (b.action === "adminLogin") {
+    var real = props.getProperty(ADMIN.passwordKey);
+    if (!real) throw new Error("No admin password is set yet. Add ADMIN_PASSWORD in Project Settings > Script properties.");
+    if (Number(cache.get("admin-fails") || 0) >= ADMIN.maxFailures)
+      throw new Error("Too many wrong passwords. Try again in " + Math.round(ADMIN.lockoutSeconds / 60) + " minutes.");
+    if (!sameString_(String(b.password || ""), real)) {
+      cache.put("admin-fails", String(Number(cache.get("admin-fails") || 0) + 1), ADMIN.lockoutSeconds);
+      throw new Error("Wrong password.");
+    }
+    cache.remove("admin-fails");
+    var token = Utilities.getUuid() + Utilities.getUuid();
+    cache.put("admin-token-" + token, "1", ADMIN.sessionSeconds);
+    return { ok: true, token: token, overrides: getOverrides_() };
+  }
+
+  if (!b.token || !cache.get("admin-token-" + b.token)) throw new Error("Your session expired. Please sign in again.");
+
+  if (b.action === "adminLoad") return { ok: true, overrides: getOverrides_() };
+  if (b.action === "adminLogout") { cache.remove("admin-token-" + b.token); return { ok: true }; }
+
+  if (b.action === "adminSave" || b.action === "adminReset") {
+    var lock = LockService.getScriptLock();
+    lock.waitLock(20000);
+    try {
+      var current = getOverrides_();
+      var currentRev = current ? Number(current.revision) || 0 : 0;
+      if (Number(b.expectedRevision || 0) !== currentRev)
+        throw new Error("These settings were changed somewhere else since you opened them. Reload the page, then re-apply your edits.");
+      var next;
+      if (b.action === "adminReset") next = { revision: currentRev + 1, scoring: null, careers: null };
+      else {
+        var errs = validateOverrides_(b.overrides);
+        if (errs.length) throw new Error(errs.slice(0, 5).join("; "));
+        next = { revision: currentRev + 1, scoring: b.overrides.scoring || null, careers: b.overrides.careers || null };
+      }
+      next.updatedAt = new Date().toISOString();
+      props.setProperty(ADMIN.overridesKey, JSON.stringify(next));
+      return { ok: true, overrides: next };
+    } finally { lock.releaseLock(); }
+  }
+  throw new Error("Unknown admin action");
+}
+
+function getOverrides_() {
+  var raw = PropertiesService.getScriptProperties().getProperty(ADMIN.overridesKey);
+  return raw ? JSON.parse(raw) : null;
+}
+
+// Compare without bailing at the first differing character.
+function sameString_(a, b) {
+  var diff = a.length ^ b.length;
+  for (var i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
+// Server-side check so a bad request can't break the survey (the site checks again against config.js).
+function validateOverrides_(o) {
+  var errors = [];
+  if (!o || typeof o !== "object") return ["Settings are missing"];
+  var sc = o.scoring;
+  if (sc) {
+    if (sc.deviationMethod !== undefined && ["absolute", "shortfall"].indexOf(sc.deviationMethod) === -1) errors.push("Unknown scoring method");
+    if (sc.skillTieBreak !== undefined && ["surveyOrder", "topCareerRelevance"].indexOf(sc.skillTieBreak) === -1) errors.push("Unknown tie-break rule");
+    ["topMatches", "bottomMatches", "topSkills"].forEach(function (k) {
+      if (sc[k] !== undefined && !(typeof sc[k] === "number" && sc[k] % 1 === 0 && sc[k] >= 1 && sc[k] <= ADMIN.maxCareers)) errors.push(k + " must be a whole number");
+    });
+  }
+  if (o.careers) {
+    if (!Array.isArray(o.careers) || !o.careers.length || o.careers.length > ADMIN.maxCareers) return errors.concat("Career list must have 1 to " + ADMIN.maxCareers + " items");
+    var names = {}, len = null;
+    o.careers.forEach(function (c, i) {
+      var label = "Career " + (i + 1);
+      if (!c || typeof c.name !== "string" || !c.name.trim() || c.name.length > 80) { errors.push(label + " needs a name (80 characters max)"); return; }
+      var key = c.name.trim().toLowerCase();
+      if (names[key]) errors.push("Duplicate career name: " + c.name);
+      names[key] = true;
+      if (ADMIN.careerGroups.indexOf(c.group) === -1) errors.push(label + " has an unknown group");
+      if (c.category != null && String(c.category).length > 80) errors.push(label + " category is too long");
+      if (c.description != null && String(c.description).length > 400) errors.push(label + " description is too long");
+      if (!Array.isArray(c.profile) || c.profile.length < 1 || c.profile.length > 30) errors.push(label + " has a bad ratings list");
+      else {
+        if (len === null) len = c.profile.length;
+        if (c.profile.length !== len) errors.push("All careers need the same number of ratings");
+        c.profile.forEach(function (v) { if (typeof v !== "number" || !isFinite(v) || v < 1 || v > 5) errors.push(label + ": ratings must be 1 to 5"); });
+      }
+    });
+  }
+  return errors;
 }
 
 // --------------------------------------------------------------------------- email

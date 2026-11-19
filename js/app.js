@@ -9,6 +9,20 @@
   var CFG = window.SURVEY_CONFIG;
   var S = window.SurveyScoring;
   var app = document.getElementById("app");
+
+  // The professor's saved scoring settings (admin.html) are loaded from the backend first.
+  // If that fails or times out, the survey runs on the defaults in config.js.
+  if (CFG.backendUrl && !window.PREVIEW_BUILD) {
+    app.innerHTML = '<p class="muted" style="padding:40px 0">Loading...</p>';
+    var timedOut = new Promise(function (_, reject) { setTimeout(function () { reject(new Error("timeout")); }, 5000); });
+    var fetched = fetch(CFG.backendUrl + "?action=config").then(function (res) { return res.json(); });
+    Promise.race([fetched, timedOut]).then(function (data) {
+      var r = S.applyOverrides(CFG, data && data.ok ? data.overrides : null);
+      if (r.errors.length) console.warn("Ignoring saved scoring settings:", r.errors);
+    }).catch(function (err) { console.warn("Using default scoring settings:", err.message); }).then(run);
+  } else run();
+
+  function run() {
   var STORE_KEY = "bca-draft-" + CFG.version;
   var PREVIEW = !CFG.backendUrl;
 
@@ -353,4 +367,5 @@
     fill: function (v) { CFG.questions.forEach(function (q) { state.answers[q.id] = v || Math.ceil(Math.random() * 5); }); persist(); render(); },
     state: function () { return state; }
   };
+  }
 })();
