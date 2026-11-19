@@ -30,7 +30,8 @@ Student's browser (GitHub Pages)                    Google (Apps Script + Sheet)
 | `js/scoring.js` | Scoring engine. Reproduces the workbook formulas | Rarely |
 | `js/app.js` | Survey screens and results page | For layout/feature changes |
 | `css/styles.css` | Look and feel | For design changes |
-| `apps-script/Code.gs` | Backend: saves responses, sends emailed copies | Once at setup |
+| `admin.html`, `js/admin.js` | **Professor settings page**: change the scoring criteria without touching code | The professor, in the browser |
+| `apps-script/Code.gs` | Backend: saves responses, sends emailed copies, stores + protects the professor's settings | Once at setup |
 | `tests/verify-scoring.js` | Checks the site's math against the Excel workbook | Run after model changes |
 
 ---
@@ -99,9 +100,36 @@ and a count of emailed copies. **Email addresses are not saved.**
 
 ---
 
-## Changing the model
+## Professor settings page (`admin.html`)
 
-Everything is in `js/config.js`:
+A private page where the professor changes how results are scored. It lives at `https://<username>.github.io/<repo-name>/admin.html`.
+It isn't linked from the survey and is set to `noindex`, and **saving requires a password** that is checked by the Google backend.
+
+**What the professor can change**
+- Each career's ideal 1–5 rating for every skill (half points allowed), plus name, group, category and description
+- Add or remove careers
+- Deviation method (absolute = Excel model, or shortfall), how many top/bottom matches and top skills are shown, and the top-skills tie-break rule
+- A **Try it out** panel: set a pretend student's 10 skill averages and see how the unsaved settings rank the careers
+- Download / load a JSON backup, and **Restore original settings** (the ones in `config.js`)
+
+**How it works.** Saved settings are stored in the Apps Script project (Script Properties). Each time the survey loads it asks the backend for them and
+applies them on top of `config.js` (if the backend can't be reached, it uses the `config.js` defaults). Every save gets a revision number, and the model version
+becomes e.g. `2026.1-r3`, so responses scored under different settings go to different tabs in the Responses sheet. Past responses are never rescored.
+Skills and survey questions are **not** editable here, since changing them changes every career's profile too. That still happens in `config.js`.
+
+**One-time setup (after pasting the new `Code.gs`)**
+1. Apps Script → **Project Settings** (gear) → **Script properties** → **Add script property**: name `ADMIN_PASSWORD`, value = a strong password for the professor. The password lives only there, never in the code or the site.
+2. **Deploy → Manage deployments → Edit → Version: New version → Deploy.** The web app URL stays the same.
+3. Open `admin.html`, sign in, make a small change, and save. Then reload the survey: the footer should show the new model version.
+
+Protection: 5 wrong passwords lock sign-in for 15 minutes, sessions last 6 hours, saves are checked on the server, and a stale page can't overwrite newer edits.
+Note the career ratings themselves are not secret. They ship to students' browsers (that's how the site scores them), and were already readable in `config.js`. What's protected is *changing* them.
+
+---
+
+## Changing the model in code
+
+For things the settings page doesn't cover (skills, questions, answer scale, "About you" questions), edit `js/config.js`:
 - **Edit a career's profile**: change its 10 numbers (order: Rel Mgmt, Analysis, Problem Solving, Written, Verbal, Organization, Teamwork, Professionalism, Time Mgmt, Attn to Detail).
 - **Add a career**: copy a line in `careers` and edit it. An optional `description` shows on the results page.
 - **Add a skill**: add it to `skills`, add its questions to `questions`, and add one more number to *every* career.
@@ -125,6 +153,7 @@ If you intentionally change a career profile, the Excel comparisons for that car
 - [ ] **New skills** (Academic Committee 4/17): collaboration, agility, innovation, more soft skills. Look for positions with no 5s and add skills they need.
 - [ ] Connect questions to course learning objectives.
 - [ ] Confirm answer choices for school status and majors.
+- [x] Professor-only page to edit the scoring criteria (`admin.html`)
 - [ ] Optional admin view or export that matches the Results Summary layout.
 - [ ] Decide long-term hosting (GitHub Pages vs NDSU).
 
