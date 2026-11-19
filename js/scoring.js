@@ -129,7 +129,7 @@
   var TIE_BREAKS = ["surveyOrder", "topCareerRelevance"];
 
   /**
-   * Check a set of professor-edited settings ("overrides") against the base config.
+   * Check a set of admin-edited settings ("overrides") against the base config.
    * Shape: { revision, scoring: {deviationMethod, topMatches, bottomMatches, topSkills, skillTieBreak},
    *          careers: [{name, group, category, description, profile:[...]}] }   (scoring/careers optional)
    */
@@ -167,7 +167,7 @@
   }
 
   /**
-   * Apply the professor's saved settings on top of config.js (mutates config).
+   * Apply the admin saved settings on top of config.js (mutates config).
    * Returns { applied, errors }. Invalid settings are ignored so the survey keeps working.
    * The model version gets a "-rN" suffix so responses scored under different settings land on different sheet tabs.
    */

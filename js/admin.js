@@ -1,6 +1,6 @@
 /*
- * Professor settings page (admin.html).
- * Lets the professor change the scoring criteria without touching code:
+ * Admin settings page (admin.html).
+ * Lets an admin change the scoring criteria without touching code:
  *   - each career's ideal 1-5 rating for every skill (add / remove / rename careers too)
  *   - how deviation is calculated, how many top/bottom matches and top skills show, the skill tie-break rule
  * Settings are saved to the Google Apps Script backend, protected by the admin password kept there.
@@ -107,7 +107,7 @@
   // ------------------------------------------------------------ render
   function render() {
     var scrollY = window.scrollY, focus = document.activeElement && document.activeElement.id;
-    root.innerHTML = '<header class="masthead"><span class="org">' + esc(CFG.organization) + '</span><span class="mode-tag">Professor settings</span></header>' +
+    root.innerHTML = '<header class="masthead"><span class="org">' + esc(CFG.organization) + '</span><span class="mode-tag">Admin settings</span></header>' +
       (st.screen === "login" ? loginView() : editView());
     if (st.screen === "edit") { window.scrollTo(0, scrollY); }
     var f = focus && document.getElementById(focus); if (f && f.focus && f.tagName !== "BUTTON") { f.focus(); try { var v = f.value; if (f.setSelectionRange && f.type === "text") f.setSelectionRange(v.length, v.length); } catch (e) { /* number inputs */ } }
@@ -115,7 +115,7 @@
 
   function loginView() {
     if (!CFG.backendUrl) return '<section class="stack login"><h1>Scoring settings</h1><div class="msg bad">No backend is connected in config.js, so settings can\'t be saved. Finish the Google Apps Script setup first (see README).</div></section>';
-    return '<section class="stack login card"><div class="stack"><p class="eyebrow">Professor only</p><h1>Scoring settings</h1>' +
+    return '<section class="stack login card"><div class="stack"><p class="eyebrow">Admin only</p><h1>Scoring settings</h1>' +
       '<p class="muted small">Sign in to change how survey results are scored.</p></div>' +
       (st.error ? '<div class="msg bad">' + esc(st.error) + '</div>' : "") +
       '<form id="login-form" class="stack" novalidate><div class="field"><label for="pw">Password</label><input type="password" id="pw" autocomplete="current-password" autofocus></div>' +
@@ -144,7 +144,7 @@
       '<div class="field"><label for="s-bottomMatches">Bottom matches shown</label><input type="number" min="1" max="' + d.careers.length + '" id="s-bottomMatches" data-scoring="bottomMatches" data-int="1" value="' + esc(sc.bottomMatches) + '" class="' + chg("bottomMatches") + '"></div>' +
       '<div class="field"><label for="s-topSkills">Top skills shown</label><input type="number" min="1" max="' + CFG.skills.length + '" id="s-topSkills" data-scoring="topSkills" data-int="1" value="' + esc(sc.topSkills) + '" class="' + chg("topSkills") + '"></div>' +
       '<div class="field"><label for="s-skillTieBreak">Tie-break for top skills</label><select id="s-skillTieBreak" data-scoring="skillTieBreak" class="' + chg("skillTieBreak") + '">' +
-        opt("surveyOrder", sc.skillTieBreak, "Survey order (matches the professor's emails)") + opt("topCareerRelevance", sc.skillTieBreak, "Skill the top careers rely on most") + '</select></div>' +
+        opt("surveyOrder", sc.skillTieBreak, "Survey order") + opt("topCareerRelevance", sc.skillTieBreak, "Skill the top careers rely on most") + '</select></div>' +
       '</div></section>';
 
     // Careers table
